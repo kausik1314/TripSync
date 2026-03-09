@@ -7,7 +7,7 @@ import { format } from "date-fns"
 import {
     Users, CalendarIcon, Plus, Trash2, CheckCircle2,
     Circle, MapPin, Search, Copy, Check, Clock, ShieldCheck, Zap,
-    Activity as ActivityIcon, DollarSign, Receipt
+    Activity as ActivityIcon, DollarSign, Receipt, Download
 } from "lucide-react"
 import confetti from "canvas-confetti"
 import { cn } from "@/lib/utils"
@@ -183,6 +183,29 @@ export default function TripDashboard() {
         router.push("/")
     }
 
+    const handleExportPDF = async () => {
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
+        const element = document.getElementById('printable-dashboard');
+        if (!element) return;
+
+        // Add a temporary class to hide elements during print if needed
+        const opt = {
+            margin: 0.5,
+            filename: `TripSync_${currentTrip?.tripName.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        toast({
+            title: "Exporting...",
+            description: "Generating PDF report of your trip.",
+        })
+
+        html2pdf().set(opt).from(element).save();
+    }
+
     // Derived state
     const totalItems = currentTrip?.items.length || 0
     const completedItems = currentTrip?.items.filter(i => i.checked).length || 0
@@ -264,13 +287,16 @@ export default function TripDashboard() {
                                 {currentUser.name.charAt(0).toUpperCase()}
                             </div>
                             <span className="text-sm font-medium mr-2">{currentUser.name}</span>
-                            <Button variant="outline" size="sm" onClick={logout} className="h-8 shadow-sm">Leave</Button>
+                            <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-8 shadow-sm">
+                                <Download className="h-4 w-4 mr-1" /> Export
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={logout} className="h-8 shadow-sm ml-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50 hidden sm:flex">Leave</Button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main id="printable-dashboard" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Main Header / Info Banner */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 shadow-sm border mb-8 relative overflow-hidden">
